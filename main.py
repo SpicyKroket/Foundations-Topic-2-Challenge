@@ -27,7 +27,7 @@ def main():
     #searchValidCameraIndexes()
     
     # Initialize the webcam capture
-    cap = cv2.VideoCapture(0)  # Use the default camera (0) or change to a different index if multiple cameras are connected to system
+    cap = cv2.VideoCapture(2)  # Use the default camera (0) or change to a different index if multiple cameras are connected to system
 
     # Main loop to process video frames
     while cap.isOpened():
@@ -40,7 +40,9 @@ def main():
 
         # Sense: Detect joints
         joints = sense.detect_joints(frame)
+        hands = sense.detect_hands(frame)
         landmarks = joints.pose_landmarks
+        hand_landmarks = hands.hand_landmarks
 
         # If landmarks are detected, calculate the elbow angle
         if landmarks:
@@ -49,7 +51,7 @@ def main():
             shoulder = sense.extract_joint_coordinates(landmarks, 'left_shoulder')
             elbow = sense.extract_joint_coordinates(landmarks, 'left_elbow')
             wrist = sense.extract_joint_coordinates(landmarks, 'left_wrist')
-
+            index_tip = sense.extract_finger_joint_coordinates(hand_landmarks, 'index_tip')
             # Calculate the elbow angle
             elbow_angle_mvg = sense.calculate_angle(shoulder, elbow, wrist)
 
@@ -65,6 +67,7 @@ def main():
             act.provide_feedback(decision, frame=frame, joints=joints, elbow_angle_mvg=elbow_angle_mvg)
             # Render the balloon visualization
             act.visualize_balloon()
+            act.visualize_dot(int(index_tip[0] * 500), int(index_tip[1] * 500))
 
             # think.check_for_timeout()
 

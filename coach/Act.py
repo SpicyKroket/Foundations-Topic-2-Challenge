@@ -129,6 +129,14 @@ class Act:
         # Wait for 1 ms and check if the window should be closed
         cv2.waitKey(1)
 
+    def visualize_dot(self, x, y):
+        print(x)
+        # Create a black background
+        img = np.zeros((500, 500, 3), dtype=np.uint8)
+        cv2.circle(img, (x, y), 20, (255, 0, 0,), -1)
+        cv2.imshow('tracking!', img)
+        cv2.waitKey(1)
+
     def provide_feedback(self, decision, frame, joints, elbow_angle_mvg):
         """
         Displays the skeleton and some text using open cve.
