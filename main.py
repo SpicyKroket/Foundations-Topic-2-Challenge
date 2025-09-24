@@ -40,13 +40,12 @@ def main():
         # Capture frame-by-frame from the webcam
         ret, frame = cap.read()
         mp_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        # mp_frame = cv2.flip(mp_frame_mirrored, 1)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
+
         if not ret:
             print("Failed to grab frame")
             break
-
-        if show_debug:
-            act.print_debug(frame)
 
         # Sense: Detect joints
         hands = sense.detect_hands(mp_image)
@@ -56,13 +55,13 @@ def main():
             raw_y = hand_landmarks[0][8].y
 
             act.extract_finger_location(raw_x, raw_y, 4)
-                    
-        # cv2.imshow("Hand Tracking", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+        
+        if show_debug:
+            act.print_debug(frame)
+            act.draw_hands(mp_image, hands)
 
         decision = think.state
-
-        act.draw_hands(mp_image, hands)
-
+        
         # Exit if the 'q' key is pressed
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break

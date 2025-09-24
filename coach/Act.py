@@ -28,6 +28,7 @@ class Act:
 
     def draw_hands(self, image, detection_result):
         annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
+        # annotated_image = cv2.flip(annotated_image_mirrored, 1)
         cv2.imshow("Working Title", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
     def display_controller(self):
