@@ -6,6 +6,7 @@ from coach import Act
 
 import numpy as np
 
+show_debug = True
 
 # Main Program Loop
 def main():
@@ -27,49 +28,40 @@ def main():
     #searchValidCameraIndexes()
     
     # Initialize the webcam capture
-    cap = cv2.VideoCapture(2)  # Use the default camera (0) or change to a different index if multiple cameras are connected to system
+    cap = cv2.VideoCapture(0)  # Use the default camera (0) or change to a different index if multiple cameras are connected to system
+    
+    window_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    window_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    act.retrieve_window_size(window_width, window_height)
 
     # Main loop to process video frames
     while cap.isOpened():
 
         # Capture frame-by-frame from the webcam
         ret, frame = cap.read()
+        mp_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
         if not ret:
             print("Failed to grab frame")
             break
 
+        if show_debug:
+            act.print_debug(frame)
+
         # Sense: Detect joints
-        joints = sense.detect_joints(frame)
-        hands = sense.detect_hands(frame)
-        landmarks = joints.pose_landmarks
+        hands = sense.detect_hands(mp_image)
         hand_landmarks = hands.hand_landmarks
+        if len(hand_landmarks) > 0:
+            raw_x = hand_landmarks[0][8].x
+            raw_y = hand_landmarks[0][8].y
 
-        # If landmarks are detected, calculate the elbow angle
-        if landmarks:
-            # Extract joint coordinates for the left arm
-            # For this example, we will use specific landmark indexes for shoulder, elbow, and wrist
-            shoulder = sense.extract_joint_coordinates(landmarks, 'left_shoulder')
-            elbow = sense.extract_joint_coordinates(landmarks, 'left_elbow')
-            wrist = sense.extract_joint_coordinates(landmarks, 'left_wrist')
-            index_tip = sense.extract_finger_joint_coordinates(hand_landmarks, 'index_tip')
-            # Calculate the elbow angle
-            elbow_angle_mvg = sense.calculate_angle(shoulder, elbow, wrist)
+            act.extract_finger_location(raw_x, raw_y, 4)
+                    
+        # cv2.imshow("Hand Tracking", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
-            # Think: Next, give the angles to the decision-making component and make decisions based on joint data
-            think.update_state(elbow_angle_mvg, sense.previous_angle)
+        decision = think.state
 
-            # We'll save the previous angle for later comparison
-            sense.previous_angle = elbow_angle_mvg
-
-            decision = think.state
-
-            # Act: Provide feedback to the user.
-            act.provide_feedback(decision, frame=frame, joints=joints, elbow_angle_mvg=elbow_angle_mvg)
-            # Render the balloon visualization
-            act.visualize_balloon()
-            act.visualize_dot(int(index_tip[0] * 500), int(index_tip[1] * 500))
-
-            # think.check_for_timeout()
+        act.draw_hands(mp_image, hands)
 
         # Exit if the 'q' key is pressed
         if cv2.waitKey(10) & 0xFF == ord('q'):

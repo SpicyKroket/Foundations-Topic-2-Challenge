@@ -6,170 +6,114 @@ import numpy as np
 import random
 import pyttsx3
 
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from mediapipe.framework.formats import landmark_pb2
+from mediapipe import solutions
 
 # Act Component: Visualization to motivate user, visualization such as the skeleton and debugging information.
 # Things to add: Other graphical visualization, a proper GUI, more verbal feedback
 class Act:
 
     def __init__(self):
-        # Balloon size and transition tracking for visualization
-        self.balloon_size = 50
+        # Tracking of animation states
         self.transition_count = 0
-        self.max_transitions = 10  # Explodes after 10 transitions
-        self.exploded = False  # Track whether the balloon exploded
-        self.explosion_fragments = []  # Store explosion fragments
-        self.explosion_frame_count = 0  # Frame counter for explosion duration
-        self.explosion_duration = 30  # Number of frames to show explosion effect
+        self.max_transitions = 10  
         self.engine = pyttsx3.init()
+        
+        self.pos_x = 0
+        self.pos_y = 0
 
-        self.motivating_utterances = ['keep on going', 'you are doing great. I see it', 'only a few left', 'that is awesome', 'you have almost finished the exercise']
-        # Handles balloon inflation and reset after explosion
+        self.motivating_utterances = []
 
-    def handle_balloon_inflation(self):
-        """
-        Increases the size of the balloon with each successful repetition.
-        """
-        if not self.exploded:  # Only inflate if balloon hasn't exploded
+    def draw_hands(self, image, detection_result):
+        annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
+        cv2.imshow("Working Title", cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
-            self.transition_count += 1
-            self.balloon_size += 10  # Inflate balloon by 10 units per transition
+    def display_controller(self):
+        self.draw_hands()
 
-            text = random.choice(self.motivating_utterances)
-            self.engine.say("%s %s" % (self.transition_count, text))
-            self.engine.runAndWait() # This is a blocking call. You need to run it in a thread.
+    def extract_finger_location(self, raw_x, raw_y, no_decimals):
+       x_absolute = round(raw_x * window_width, no_decimals)
+       y_absolute = round(raw_y * window_height, no_decimals)
 
-            # Check if balloon should explode
+       self.pos_x = x_absolute
+       self.pos_y = y_absolute
 
-            if self.transition_count >= self.max_transitions:
-                self.explode_balloon()
+       return x_absolute, y_absolute
 
-    def explode_balloon(self):
-        """
-        Handles the visual effect of the balloon exploding.
-        """
-
-        self.exploded = True  # Mark the balloon as exploded
-        self.create_explosion_fragments()  # Generate the explosion fragments
-        self.engine.say("boooom booooom booom")
-        self.engine.runAndWait()
-
-    def reset_balloon(self):
-        """
-        Resets the balloon after it explodes.
-        """
-
-        self.transition_count = 0
-        self.balloon_size = 50  # Reset balloon size
-        self.exploded = False  # Reset explosion state
-        self.explosion_frame_count = 0  # Reset the explosion frame counter
-        self.explosion_fragments.clear()  # Clear the fragments after explosion
-
-        self.engine.say("You did great! Let's reset the balloon.")
-        self.engine.runAndWait()
-        # Create explosion fragments with random sizes and positions
-
-    def create_explosion_fragments(self):
-        # Generate random "fragments" for explosion effect
-        for _ in range(20):
-            fragment = {
-                'position': (random.randint(200, 300), random.randint(200, 400)),
-                'size': random.randint(5, 15),
-                'color': (0, 0, 255),  # Red fragments
-                'dx': random.randint(-10, 10),  # X-direction movement
-                'dy': random.randint(-10, 10)  # Y-direction movement
-            }
-            self.explosion_fragments.append(fragment)
-
-        # Visualization of the balloon and explosion in OpenCV
-
-    def visualize_balloon(self):
-        """
-        Renders the balloon .
-        """
-
-        # Create a black background
-        img = np.zeros((500, 500, 3), dtype=np.uint8)
-
-        if not self.exploded:
-            # Draw the balloon (a circle) with dynamic size if it hasn't exploded
-            cv2.circle(img, (250, 300), self.balloon_size, (0, 0, 255), -1)  # Red balloon
-        else:
-            # Draw explosion fragments if balloon has exploded
-            for fragment in self.explosion_fragments:
-                x, y = fragment['position']
-                size = fragment['size']
-                color = fragment['color']
-
-                # Move fragments in random directions
-                x += fragment['dx']
-                y += fragment['dy']
-                fragment['position'] = (x, y)
-
-                # Draw each fragment as a small circle
-                cv2.circle(img, (x, y), size, color, -1)
-
-            self.explosion_frame_count += 1
-
-            # Reset the balloon after the explosion effect finishes
-            if self.explosion_frame_count >= self.explosion_duration:
-                self.reset_balloon()
-
-        cv2.putText(img, f'Repeat flexing/bending your left arm to pop the balloon!', (0, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, .55, (255, 255, 255), 2, cv2.LINE_AA)
-
-        # Add transition count and text
-        cv2.putText(img, f'Repetitions: {self.transition_count}', (150, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(img, f'Balloon Size: {self.balloon_size}', (150, 150),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-
-        # Show the image in the window
-        cv2.imshow('Flex and bend your left elbow!', img)
-
-        # Wait for 1 ms and check if the window should be closed
-        cv2.waitKey(1)
-
-    def visualize_dot(self, x, y):
-        print(x)
-        # Create a black background
-        img = np.zeros((500, 500, 3), dtype=np.uint8)
-        cv2.circle(img, (x, y), 20, (255, 0, 0,), -1)
-        cv2.imshow('tracking!', img)
-        cv2.waitKey(1)
-
-    def provide_feedback(self, decision, frame, joints, elbow_angle_mvg):
-        """
-        Displays the skeleton and some text using open cve.
-
-        :param decision: The decision in which state the user is from the think component.
-        :param frame: The currently processed frame form the webcam.
-        :param joints: The joints extracted from mediapipe from the current frame.
-        :param elbow_angle_mvg: The moving average from the left elbow angle.
-
-        """
-
-        mp.solutions.drawing_utils.draw_landmarks(frame, joints.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
-
-        # Define the number and text to display
-        number = elbow_angle_mvg
-        text = " "
-        if decision == 'flexion':
-            text = "You are flexing your elbow! %s" % number
-        elif decision == 'extension':
-            text = "You are extending your elbow! %s" % number
-
-
-        # Set the position, font, size, color, and thickness for the text
+    def print_debug(self, frame):
+        # Set font and text position
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = .9
         font_color = (0, 0, 0)  # White color in BGR
         thickness = 2
 
-        # Define the position for the number and text
         text_position = (50, 50)
+        
+        # Information to be printed
+        text_finger_location = ("Index finger location - x:{0} -- y:{1}".format( self.pos_x, self.pos_y))
 
-        # Draw the text on the image
-        cv2.putText(frame, text, text_position, font, font_scale, font_color, thickness)
+        cv2.putText(frame, text_finger_location, text_position, font, font_scale, font_color, thickness)
 
-        # Display the frame (for debugging purposes)
-        cv2.imshow('Sport Coaching Program', frame)
+        cv2.imshow("Working Title", frame)
+        cv2.waitKey(1)
+
+    def retrieve_window_size(self, width, height):
+        global window_width
+        global window_height
+
+        window_width = width
+        window_height = height
+    
+    def visualize_dot(self, frame):
+        window_margin = 100
+        # Generate a new dot if update_dot is True
+        if self.update_dot:
+            self.dot_x = random.randrange(window_margin, int(window_width - window_margin))
+            self.dot_y = random.randrange(window_margin, int(window_height - window_margin))
+            self.dot_radius = random.randrange(20, window_margin*2)
+            self.update_dot=False
+        
+        cv2.circle(frame,center=(self.dot_x, self.dot_y), radius=self.dot_radius, color=(1,1,1), thickness=-1)
+
+MARGIN = 10  # pixels
+FONT_SIZE = 1
+FONT_THICKNESS = 1
+HANDEDNESS_TEXT_COLOR = (88, 205, 54) # vibrant green
+
+def draw_landmarks_on_image(rgb_image, detection_result):
+  hand_landmarks_list = detection_result.hand_landmarks
+  handedness_list = detection_result.handedness
+  annotated_image = np.copy(rgb_image)
+
+  # Loop through the detected hands to visualize.
+  for idx in range(len(hand_landmarks_list)):
+    hand_landmarks = hand_landmarks_list[idx]
+    handedness = handedness_list[idx]
+
+    # Draw the hand landmarks.
+    hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+    hand_landmarks_proto.landmark.extend([
+      landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in hand_landmarks
+    ])
+    solutions.drawing_utils.draw_landmarks(
+      annotated_image,
+      hand_landmarks_proto,
+      solutions.hands.HAND_CONNECTIONS,
+      solutions.drawing_styles.get_default_hand_landmarks_style(),
+      solutions.drawing_styles.get_default_hand_connections_style())
+
+    # Get the top left corner of the detected hand's bounding box.
+    height, width, _ = annotated_image.shape
+    x_coordinates = [landmark.x for landmark in hand_landmarks]
+    y_coordinates = [landmark.y for landmark in hand_landmarks]
+    text_x = int(min(x_coordinates) * width)
+    text_y = int(min(y_coordinates) * height) - MARGIN
+
+    # Draw handedness (left or right hand) on the image.
+    cv2.putText(annotated_image, f"{handedness[0].category_name}",
+                (text_x, text_y), cv2.FONT_HERSHEY_DUPLEX,
+                FONT_SIZE, HANDEDNESS_TEXT_COLOR, FONT_THICKNESS, cv2.LINE_AA)
+
+  return annotated_image
