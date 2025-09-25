@@ -32,24 +32,16 @@ class Think(object):
 
         # Act component for visualization
         self.act_component = act_component
-    
 
-        # Define the state machine with states 'flexion' and 'extension'
-        # states = ['moving', 'on_target', 'hit_target']
-
-        # Initialize the state machine
-        # self.machine = Machine(model=self, states=states, initial='moving')
-
-        # self.machine.add_transition(trigger='finger_on_target', source='moving', dest='on_target', conditions=['is_target_distance_reached'])
-        # self.machine.add_transition(trigger='not_on_target', source='on_target', dest='on_target' conditions=)
-
-        # Define transitions
-        # self.is_target_reached()
+        # Tracking how long it took to hit a dot
+        self.dot_time_start = time.time()
+        self.time_to_hit = 0
+        self.last_dot_time = 999
         
     
     def calculate_distance(self, x_pos, y_pos, dot_x, dot_y):
         if x_pos > 0 and y_pos > 0:
-            self.distance_to_target = np.sqrt(np.square(x_pos - dot_x) + np.square(y_pos - dot_y))
+            self.distance_to_target = round(np.sqrt(np.square(x_pos - dot_x) + np.square(y_pos - dot_y)), 4)
         else:
             self.distance_to_target = 999
 
@@ -64,14 +56,17 @@ class Think(object):
         self.calculate_distance(x_finger, y_finder, dot_x, dot_y)
     
 
-        current_time = time.time()
-        time_elapsed = current_time - self.on_target_start
-        minimum_distance = self.minimum_distance + dot_radius
+        # current_time = time.time()
+        time_elapsed = time.time() - self.on_target_start
+        minimum_dist = self.minimum_distance + dot_radius
 
-        if self.distance_to_target <= self.minimum_distance and self.state != "on_target":
-            self.on_target_start = time.time()
+        if self.distance_to_target <= minimum_dist and self.state != "on_target":
             self.state = "on_target"
+            self.on_target_start = time.time()
         elif self.state == "on_target" and time_elapsed >= self.req_time_on_target:
+            self.time_to_hit = time.time() - self.dot_time_start
+            self.dot_time_start = time.time()
+
             self.hit_target = True
             self.on_target_start = 0
             self.state = "hit_target"

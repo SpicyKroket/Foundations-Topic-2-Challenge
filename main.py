@@ -60,7 +60,10 @@ def main():
         
         # Think: make decisions
         think.update_state(act.pos_x, act.pos_y, act.dot_x, act.dot_y, act.dot_radius)
-        # decision = think.state
+        if think.time_to_hit != think.last_dot_time and think.time_to_hit > 0:
+            act.dot_times.append(think.time_to_hit)
+            think.last_dot_time = think.time_to_hit
+            think.time_to_hit = -1
 
         if think.hit_target:
             act.update_dot = True
@@ -69,6 +72,10 @@ def main():
         
         # Act: show our amazing visuals
         act.visualize_program(frame=frame, decision=None, image=mp_image, detection=hands, distance=think.distance_to_target)
+
+        if act.completed and cv2.waitKey(0) & 0xFF == ord('q'):
+                cap.release()
+                cv2.destroyAllWindows()
 
         # Exit if the 'q' key is pressed
         if cv2.waitKey(10) & 0xFF == ord('q'):
