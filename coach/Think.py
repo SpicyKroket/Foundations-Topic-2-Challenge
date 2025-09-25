@@ -24,7 +24,7 @@ class Think(object):
         self.previous_state = self.state
 
         # Distances that decide whether user is close enough
-        self.minimum_distance = 100
+        self.minimum_distance = 50
         self.distance_to_target = 999
         self.targets_hit = 0
         self.on_target_start = -1
@@ -66,6 +66,7 @@ class Think(object):
 
         current_time = time.time()
         time_elapsed = current_time - self.on_target_start
+        minimum_distance = self.minimum_distance + dot_radius
 
         if self.distance_to_target <= self.minimum_distance and self.state != "on_target":
             self.on_target_start = time.time()

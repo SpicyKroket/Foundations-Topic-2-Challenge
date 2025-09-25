@@ -6,7 +6,7 @@ from coach import Act
 
 import numpy as np
 
-show_debug = True
+# show_debug = True
 
 # Main Program Loop
 def main():
@@ -36,8 +36,8 @@ def main():
 
         # Capture frame-by-frame from the webcam
         ret, frame = cap.read()
-        mp_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        # mp_frame = cv2.flip(mp_frame_mirrored, 1)
+        mp_frame_mirror = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        mp_frame = cv2.flip(mp_frame_mirror, 1)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
 
         if not ret:
@@ -47,23 +47,28 @@ def main():
         # Sense: Detect joints
         hands = sense.detect_hands(mp_image)
         hand_landmarks = hands.hand_landmarks
-        if len(hand_landmarks) > 0:
-            raw_x = hand_landmarks[0][8].x
+        if len(hand_landmarks) == 1:
+            raw_x = 1 - hand_landmarks[0][8].x
             raw_y = hand_landmarks[0][8].y
 
             act.extract_finger_location(raw_x, raw_y, 4)
+            act.two_hands = False
+        elif len(hand_landmarks) == 2:
+            act.two_hands = True
+        else: act.two_hands = False
+
         
         # Think: make decisions
         think.update_state(act.pos_x, act.pos_y, act.dot_x, act.dot_y, act.dot_radius)
-        decision = think.state
+        # decision = think.state
 
         if think.hit_target:
             act.update_dot = True
+            act.dots_hit += 1
             think.hit_target = False
         
         # Act: show our amazing visuals
-        act.show_debug(frame=frame, decision=None, image=mp_image, detection=hands, distance=think.distance_to_target)
-        act.visualize_task()
+        act.visualize_program(frame=frame, decision=None, image=mp_image, detection=hands, distance=think.distance_to_target)
 
         # Exit if the 'q' key is pressed
         if cv2.waitKey(10) & 0xFF == ord('q'):
