@@ -16,13 +16,10 @@ def main():
     This function sets up the webcam feed, initializes the Sense, Think, and Act components,
     and starts the main loop to continuously process frames from the webcam.
     """
-
-    
     # Initialize the components: Sense for input, Think for decision-making, Act for output
     sense = Sense.Sense()
     act = Act.Act()
     think = Think.Think(act)
-
 
     # Search and print available camera devices (may take a while to complete)
     #searchValidCameraIndexes()
@@ -56,12 +53,18 @@ def main():
 
             act.extract_finger_location(raw_x, raw_y, 4)
         
-        if show_debug:
-            act.print_debug(frame)
-            act.draw_hands(mp_image, hands)
-
+        # Think: make decisions
+        think.update_state(act.pos_x, act.pos_y, act.dot_x, act.dot_y, act.dot_radius)
         decision = think.state
+
+        if think.hit_target:
+            act.update_dot = True
+            think.hit_target = False
         
+        # Act: show our amazing visuals
+        act.show_debug(frame=frame, decision=None, image=mp_image, detection=hands, distance=think.distance_to_target)
+        act.visualize_task()
+
         # Exit if the 'q' key is pressed
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
