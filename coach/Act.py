@@ -4,6 +4,9 @@ import cv2
 import numpy as np
 import random
 import pyttsx3
+from gtts import gTTS
+import pygame
+import os
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -48,7 +51,51 @@ class Act:
         self.timer_complete = False
 
         # Feedback
-        self.motivating_utterances = []
+        pygame.mixer.init()
+        self.last_feedback_time = 0
+        self.feedback_interval = 3.5
+        self.last_phrase = None
+
+        self.feedback_phrases = {
+            "Good": "good.mp3",
+            "Excellent": "excellent.mp3",
+            "Very close": "very_close.mp3",
+            "Almost": "almost.mp3",
+            "Keep trying": "try_again.mp3"
+        }
+
+        # Generate the files with phrase once
+        for phrase, file in self.feedback_phrases.items():
+            if not os.path.exists(file):
+                tts = gTTS(text=phrase, lang="en")
+                tts.save(file)
+
+    def speak_feedback(self, phrase):
+        file = self.feedback_phrases[phrase]
+        pygame.mixer.music.load(file)
+        pygame.mixer.music.play()
+
+    def give_feedback(self, distance_to_target):
+        import time
+        import random
+        now = time.time()
+
+        if now - self.last_feedback_time < self.feedback_interval:
+            return
+
+        if distance_to_target < 60:
+            phrase = "Excellent"
+        elif distance_to_target < 120:
+            options = ["Very close", "Almost", "Good"]
+            safe_options = [p for p in options if p != getattr(self, "last_phrase", None)]
+            if not safe_options:
+                safe_options = options
+            phrase = random.choice(safe_options)
+        else:
+            phrase = "Keep trying"
+        self.speak_feedback(phrase)
+        self.last_feedback_time = now
+        self.last_phrase = phrase
 
     def draw_target_line(self, frame):
         if self.pos_x > 0 and self.pos_y > 0:

@@ -69,6 +69,7 @@ def main():
             act.update_dot = True
             act.dots_hit += 1
             think.hit_target = False
+        act.give_feedback(think.distance_to_target)
         
         # Act: show our amazing visuals
         act.visualize_program(frame=frame, decision=None, image=mp_image, detection=hands, distance=think.distance_to_target)
