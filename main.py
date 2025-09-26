@@ -38,7 +38,8 @@ def main():
         # Capture frame-by-frame from the webcam
         ret, frame = cap.read()
         mp_frame_mirror = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        mp_frame = cv2.flip(mp_frame_mirror, 1)
+        mp_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        # mp_frame = cv2.flip(mp_frame_mirror, 1)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
 
         if not ret:
@@ -54,9 +55,13 @@ def main():
 
             act.extract_finger_location(raw_x, raw_y, 4)
             act.two_hands = False
+            act.no_hands = False
         elif len(hand_landmarks) == 2:
             act.two_hands = True
-        else: act.two_hands = False
+            act.no_hands = False
+        elif len(hand_landmarks) == 0:
+            # act.no_hands = True
+            act.two_hands = False
 
         
         # Think: make decisions

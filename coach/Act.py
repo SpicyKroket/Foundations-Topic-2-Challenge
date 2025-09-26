@@ -15,7 +15,7 @@ from mediapipe import solutions
 
 import time
 
-show_debug_info = True
+show_debug_info = False
 
 # Act Component: Visualization to motivate user, visualization such as the skeleton and debugging information.
 # Things to add: Other graphical visualization, a proper GUI, more verbal feedback
@@ -30,6 +30,7 @@ class Act:
 
         # Check wether there are two hands in the screen
         self.two_hands = None
+        self.no_hands = None
 
         # Variables for the dots
         self.update_dot = True
@@ -73,7 +74,7 @@ class Act:
 
     def draw_target_line(self, frame):
         if self.pos_x > 0 and self.pos_y > 0:
-            cv2.line(frame, (int(self.pos_x), int(self.pos_y)), (int(self.dot_x), int(self.dot_y)), (0, 0, 255), thickness=1)
+            cv2.line(frame, (int(self.pos_x), int(self.pos_y)), (int(self.dot_x), int(self.dot_y)), (0, 0, 255), thickness=3)
 
     def extract_finger_location(self, raw_x, raw_y, no_decimals):
        x_absolute = raw_x * window_width
@@ -167,12 +168,14 @@ class Act:
         # Wait until a key is hit and then quit the program
 
     def visualize_program(self, frame, decision, image, detection, distance):
+        frame = cv2.flip(frame, 1)
         # Target for how many dots should be hit
 
         # Code to show hand skeleton
         annotated_image = draw_landmarks_on_image(image.numpy_view(), detection)
         hand_skeleton_mirror = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
-        hand_skeleton = cv2.flip(hand_skeleton_mirror, 1)
+        hand_skeleton = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
+        # hand_skeleton = cv2.flip(hand_skeleton_mirror, 1)
 
         # Set font and text position
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -191,8 +194,8 @@ class Act:
             cv2.putText(frame, text_target_distance, (50, 90), font, font_scale, font_color, thickness)
 
             # self.finger_dot(frame)
-            self.draw_target_line(frame)
-        
+            
+        self.draw_target_line(frame)
         # text_dots_hit = "Dots hit: {0} out of {1}".format(self.dots_hit, self.max_dots)
         text_dots_hit = "Dots hit: {0}".format(self.dots_hit)
         cv2.putText(frame, text_dots_hit, (50, 130), font, font_scale, font_color, thickness)
@@ -216,11 +219,21 @@ class Act:
             cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (30, 30, 255), thickness=-1)
             cv2.putText(frame, "Failure in hand detection!", (200, 200), font, font_scale, font_color, thickness)
             cv2.putText(frame, "- Two hands detected", (200, 230), font, font_scale, font_color, thickness)
+        elif self.no_hands:
+            window_offset = 30
+            corner_x = int(window_width - window_offset)
+            corner_y = int(window_height - window_offset)
+            cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (30, 30, 255), thickness=-1)
+            cv2.putText(frame, "Failure in hand detection!", (200, 200), font, font_scale, font_color, thickness)
+            cv2.putText(frame, "- Please keep your hand in the cameras view", (200, 230), font, font_scale, font_color, thickness)
 
         self.show_timer(frame)
 
         if show_debug_info: 
-            combined = cv2.addWeighted(frame, 0.8, hand_skeleton, 0.2, 0)
+            hand_skeleton = cv2.flip(hand_skeleton, 1)
+            combined = cv2.addWeighted(frame, 0.8, hand_skeleton, 0.4, 0)
+            # combined_mirror = cv2.addWeighted(frame, 0.8, hand_skeleton, 0.2, 0)
+            # combined = cv2.flip(combined_mirror, 1)
             cv2.imshow("Feedback window", combined)
         else: cv2.imshow("Task window", frame)
 
