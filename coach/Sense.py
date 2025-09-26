@@ -22,7 +22,8 @@ class Sense:
         # STEP 2: Create an HandLandmarker object.
         system = platform.system()
         if system == "Windows":
-            task_path = Path(_file_).parent / "../hand_landmarker.task"
+            # task_path = Path(_file_).parent / "../hand_landmarker.task"
+            task_path = Path("hand_landmarker.task")
             base_options = python.BaseOptions(model_asset_path=open(str(task_path.resolve(), "rb")).read())
         else: base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
 
