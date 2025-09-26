@@ -8,7 +8,7 @@ import numpy as np
 
 # show_debug = True
 
-# Main Program Loop
+# Main Program Loopq
 def main():
     """
     Main function to initialize the exercise tracking application.

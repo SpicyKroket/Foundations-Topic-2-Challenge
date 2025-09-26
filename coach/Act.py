@@ -53,8 +53,9 @@ class Act:
         # Feedback
         pygame.mixer.init()
         self.last_feedback_time = 0
-        self.feedback_interval = 3.5
+        self.feedback_interval = 2
         self.last_phrase = None
+        # self.last_phrase_time = time.time()
 
         self.feedback_phrases = {
             "Good": "good.mp3",
@@ -69,33 +70,6 @@ class Act:
             if not os.path.exists(file):
                 tts = gTTS(text=phrase, lang="en")
                 tts.save(file)
-
-    def speak_feedback(self, phrase):
-        file = self.feedback_phrases[phrase]
-        pygame.mixer.music.load(file)
-        pygame.mixer.music.play()
-
-    def give_feedback(self, distance_to_target):
-        import time
-        import random
-        now = time.time()
-
-        if now - self.last_feedback_time < self.feedback_interval:
-            return
-
-        if distance_to_target < 60:
-            phrase = "Excellent"
-        elif distance_to_target < 120:
-            options = ["Very close", "Almost", "Good"]
-            safe_options = [p for p in options if p != getattr(self, "last_phrase", None)]
-            if not safe_options:
-                safe_options = options
-            phrase = random.choice(safe_options)
-        else:
-            phrase = "Keep trying"
-        self.speak_feedback(phrase)
-        self.last_feedback_time = now
-        self.last_phrase = phrase
 
     def draw_target_line(self, frame):
         if self.pos_x > 0 and self.pos_y > 0:
@@ -113,6 +87,33 @@ class Act:
             cv2.circle(frame, (int(self.pos_x), int(self.pos_y)), 20, (1, 1, 1), thickness=-1)
         else:
             cv2.circle(frame, (-1, -1), 1, (0, 0, 0), thickness=-1)
+
+    def give_feedback(self, distance_to_target):
+        import time
+        import random
+        now = time.time()
+        time_since_last_phrase = now - self.last_feedback_time
+
+        phrase = None
+
+        if time_since_last_phrase < self.feedback_interval:
+            return
+
+        if distance_to_target < 100:
+            phrase = "Excellent"
+        elif distance_to_target < 250:
+            options = ["Very close", "Almost", "Good"]
+            safe_options = [p for p in options if p != getattr(self, "last_phrase", None)]
+            if not safe_options:
+                safe_options = options
+            phrase = random.choice(safe_options)
+        elif distance_to_target > 500 and time_since_last_phrase > 5:
+            phrase = "Keep trying"
+
+        if phrase:
+            self.speak_feedback(phrase)
+            self.last_feedback_time = now
+            self.last_phrase = phrase
 
     def retrieve_window_size(self, width, height):
         global window_width
@@ -134,6 +135,11 @@ class Act:
             cv2.putText(frame, text_countdown, (50, 200), font, font_scale, font_color, thickness)
         else:
             self.timer_complete = True
+
+    def speak_feedback(self, phrase):
+        file = self.feedback_phrases[phrase]
+        pygame.mixer.music.load(file)
+        pygame.mixer.music.play()
     
     def task_complete(self):
         self.completed = True
@@ -199,7 +205,8 @@ class Act:
             window_offset = 30
             corner_x = int(window_width - window_offset)
             corner_y = int(window_height - window_offset)
-            cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (255, 50, 50), thickness=-1)
+            cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (50, 50, 50), thickness=-1)
+            if not self.dot_times: self.dot_times = [0]
             self.task_complete()
 
         if self.two_hands:
