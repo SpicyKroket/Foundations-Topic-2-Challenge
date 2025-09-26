@@ -53,7 +53,7 @@ class Act:
         # Feedback
         pygame.mixer.init()
         self.last_feedback_time = 0
-        self.feedback_interval = 2
+        self.feedback_interval = 3.5
         self.last_phrase = None
         # self.last_phrase_time = time.time()
 
@@ -229,6 +229,7 @@ class Act:
     
     def visualize_dot(self, frame):
         window_margin = 300 # Margin to make sure the dot does not go outside of the screen
+        window_margin = int(min(window_width, window_height) // 4)
 
         if self.update_dot:
             self.dot_x = random.randrange(window_margin, int(window_width - window_margin))
