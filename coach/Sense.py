@@ -1,11 +1,12 @@
-import cv2
+# import cv2
 import mediapipe as mp
-import math
-import numpy as np
+# import math
+# import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import os
+# import os
 import platform
+from pathlib import Path
 
 # Sense Component: Detect joints using the camera
 # Things you need to improve: Make the skeleton tracking smoother and robust to errors.

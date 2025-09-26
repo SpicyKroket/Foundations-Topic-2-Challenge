@@ -4,6 +4,7 @@ from coach import Sense
 from coach import Think
 from coach import Act
 
+
 import numpy as np
 
 # show_debug = True
