@@ -216,8 +216,8 @@ class Act:
             window_offset = 30
             corner_x = int(window_width - window_offset)
             corner_y = int(window_height - window_offset)
-            cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (30, 30, 255), thickness=-1)
-            cv2.putText(frame, "Failure in hand detection!", (200, 200), font, font_scale, font_color, thickness)
+            # cv2.rectangle(frame, (window_offset, window_offset), (corner_x, corner_y), (30, 30, 255), thickness=-1)
+            cv2.putText(frame, "Failure in hand detection!", (200, 200), font, font_scale, (0, 0, 255), thickness)
             cv2.putText(frame, "- Two hands detected", (200, 230), font, font_scale, font_color, thickness)
         elif self.no_hands:
             window_offset = 30

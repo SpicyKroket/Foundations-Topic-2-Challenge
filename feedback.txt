@@ -1,1 +1,7 @@
-- The time of the task is perceived as taking too long (60 seconds)
+- The time of the task is perceived as taking too long (60 seconds) Participant 1
+- Not clear which finger to use (Participant 2)
+- Not clear which hand to use (Participant 2)
+- There was no feedback when they had two hands in the screen (Participant 2)
+- The dots where quite far away so the participants had to move their whole body a lot (Participant 4 & 5)
+- The game element was quite nice, added a sense of urgency (Participant 5)
+- There is no check to see if you are moving your body instead of just your arm (Participant 5)
