@@ -46,14 +46,14 @@ class Act:
 
         # Timer variables
         self.start_timer = time.time()
-        self.timer_duration = 30
+        self.timer_duration = 60
         self.end_timer =  time.time() + self.timer_duration
         self.timer_complete = False
 
         # Feedback
         pygame.mixer.init()
         self.last_feedback_time = 0
-        self.feedback_interval = 3.5
+        self.feedback_interval = 5
         self.last_phrase = None
         # self.last_phrase_time = time.time()
 
